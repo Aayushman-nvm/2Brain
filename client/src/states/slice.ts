@@ -22,7 +22,28 @@ const appSlice = createSlice({
   },
 });
 
+const modalSlice = createSlice({
+  name: "modal",
+  initialState: {
+    isOpen: false,
+  },
+  reducers: {
+    openPopup: (state) => {
+      state.isOpen = true;
+    },
+    closePopup: (state) => {
+      state.isOpen = false;
+    },
+    togglePopup: (state) => {
+      state.isOpen = !state.isOpen;
+    },
+  },
+});
+
 const appReducer = appSlice.reducer;
 export default appReducer;
 
+export const modalReducer = modalSlice.reducer;
+
 export const { setUser, setToken, setMode } = appSlice.actions;
+export const { openPopup, closePopup, togglePopup } = modalSlice.actions;
