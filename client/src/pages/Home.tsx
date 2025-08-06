@@ -4,11 +4,13 @@ import { useSelector } from "react-redux";
 import Card from "../components/Card";
 
 function Home() {
-  type ContentItem = {
-    title: string;
-    link: string;
-    type: "Image" | "Video" | "Tweet" | "WebSite" | "Miscellaneous";
-  };
+  interface ContentItem {
+  title: string,
+  link: string,
+  type: "Image" | "Video" | "Tweet" | "WebSite" | "Miscellaneous",
+  _id: string,
+  madeBy: string
+}
 
   const [content, setContent] = useState<ContentItem[]>([]);
   const userId = useSelector((state: any) => state.app.user._id);
@@ -28,7 +30,7 @@ function Home() {
   }, [])
   return (
     <div>Home
-      {content.map((item) => <Card title={item.title} link={item.link} type={item.type} />)}
+      {content.map((item, index) => <Card key={index} title={item.title} link={item.link} type={item.type} id={item._id} madeBy={item.madeBy}/>)}
     </div>
   )
 }
