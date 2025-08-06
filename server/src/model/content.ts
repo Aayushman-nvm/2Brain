@@ -5,7 +5,7 @@ const contentSchema = new mongoose.Schema({
   link:{type:String},
   type:{type:String,enum:["Image","Video","Tweet","WebSite","Miscellaneous"]},
   madeBy: { type: mongoose.Schema.ObjectId, ref: "Users", required: true },
-  tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tags" }],
+  //tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tags" }],
 });
 
 export const Contents = mongoose.model("contents", contentSchema);

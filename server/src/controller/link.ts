@@ -35,13 +35,16 @@ export async function handleShare(req: Request, res: Response) {
 export async function getLink(req: Request, res: Response) {
   try {
     const { linkId } = req.params;
+    console.log("Link ID: ",linkId);
 
-    const linkDoc = await Links.findOne({ linkId });
+    const linkDoc = await Links.findOne({ hash:linkId });
+    console.log("Link Doc: ",linkDoc);
     if (!linkDoc) {
       return res.status(404).json({ message: "Invalid share link" });
     }
 
-    const content = await Contents.findOne({ madeBy: linkDoc.userId });
+    const content = await Contents.find({ madeBy: linkDoc.userId });
+    console.log("Link Content: ",content);
     if (!content) {
       return res
         .status(404)
