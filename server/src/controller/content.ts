@@ -7,13 +7,13 @@ interface Content {
   type: string;
   madeBy: mongoose.Types.ObjectId;
   link: string;
-  tags: string[];
+  //tags: string[];
 }
 
 export async function handleContents(req: Request, res: Response) {
   try {
     const body = req.body;
-
+    console.log(body);
     if (!body) {
       return res.status(400).json({ message: "Request body missing" });
     }
@@ -23,10 +23,12 @@ export async function handleContents(req: Request, res: Response) {
       type: body.type,
       madeBy: new mongoose.Types.ObjectId(body.userID),
       link: body.link,
-      tags: body.tags,
+      //tags: body.tags,
     };
+    console.log("new content: ", newContent);
 
     const savedContent = await Contents.create(newContent);
+    console.log("saved content: ", savedContent);
     return res.status(201).json(savedContent);
   } catch (error) {
     console.error("Error creating content:", error);
@@ -36,13 +38,13 @@ export async function handleContents(req: Request, res: Response) {
 
 export async function getContents(req: Request, res: Response) {
   try {
-    const body = req.body
+    const userId = req.query.userId;
 
-    if (!body?.id) {
+    console.log("User Id: ", userId);
+
+    if (!userId) {
       return res.status(400).json({ message: "Missing user ID" });
     }
-
-    const userId = new mongoose.Types.ObjectId(body.id);
 
     const allContent = await Contents.find({ madeBy: userId });
 
@@ -54,10 +56,11 @@ export async function getContents(req: Request, res: Response) {
 }
 
 export async function deleteContent(req: Request, res: Response) {
-  const body = req.body as { id: string; userID: string };
-
   try {
-    const { id: contentId, userID: userId } = body;
+    console.log("Request Query: ",req.query);
+    const contentId = req.query.id as string;
+    const userId = req.query.userId as string;
+    console.log(`Content ID:${contentId} User ID:${userId}`)
 
     if (!contentId || !userId) {
       return res.status(400).json({ message: "Missing content ID or user ID" });
@@ -67,9 +70,12 @@ export async function deleteContent(req: Request, res: Response) {
       _id: new mongoose.Types.ObjectId(contentId),
       madeBy: new mongoose.Types.ObjectId(userId),
     });
+    console.log(`Deleted: ${deleted}`);
 
     if (!deleted) {
-      return res.status(404).json({ message: "Content not found or not authorized" });
+      return res
+        .status(404)
+        .json({ message: "Content not found or not authorized" });
     }
 
     res.status(200).json({ message: "Content Deleted" });
