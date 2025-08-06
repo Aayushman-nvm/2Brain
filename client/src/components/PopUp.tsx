@@ -55,9 +55,11 @@ function PopUp() {
         onChange={(e) => setContent({ ...content, type: e.target.value })}
       >
         <option value="">Select type</option>
+        <option value="Image">Image</option>
         <option value="Video">Video</option>
-        <option value="article">Article</option>
-        <option value="image">Image</option>
+        <option value="Tweet">Tweet</option>
+        <option value="WebSite">WebSite</option>
+        <option value="Miscellaneous">Miscellaneous</option>
       </select>
       <br />
 
