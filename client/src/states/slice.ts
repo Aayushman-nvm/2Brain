@@ -4,6 +4,7 @@ const initialState = {
   user: null,
   token: null,
   mode: "light",
+  share:false,
 };
 
 const appSlice = createSlice({
@@ -19,6 +20,10 @@ const appSlice = createSlice({
     setMode: (state, action) => {
       state.mode = action.payload;
     },
+    setShare:(state)=>{
+      state.share=!state.share;
+      console.log(state.share);
+    }
   },
 });
 
@@ -45,5 +50,5 @@ export default appReducer;
 
 export const modalReducer = modalSlice.reducer;
 
-export const { setUser, setToken, setMode } = appSlice.actions;
+export const { setUser, setToken, setMode, setShare } = appSlice.actions;
 export const { openPopup, closePopup, togglePopup } = modalSlice.actions;
