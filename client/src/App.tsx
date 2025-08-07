@@ -1,6 +1,5 @@
 import { BrowserRouter, Route, Navigate, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
-
 import { store } from "./states/store";
 
 import Discover from "./pages/Discover";
@@ -19,45 +18,42 @@ import PopUp from "./components/PopUp";
 function App() {
   type RootState = ReturnType<typeof store.getState>;
   const token = useSelector((state: RootState) => state.app.token);
+  const mode = useSelector((state: RootState) => state.app.mode);
 
   return (
-    <div className="bg-red-500 min-h-screen">
-      <NavBar />
-      <SideBar />
-      <PopUp />
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={token ? <Home /> : <Navigate to="/login" />}
-          />
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/discover"
-            element={<Discover />}
-          />
-          <Route
-            path="/images"
-            element={token ? <Image /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/videos"
-            element={token ? <Video /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/tweets"
-            element={token ? <Tweet /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/websites"
-            element={token ? <WebSite /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/miscellaneous"
-            element={token ? <Miscellaneous /> : <Navigate to="/login" />}
-          />
-        </Routes>
-      </BrowserRouter>
+    <div className="min-h-screen">
+      <div className={`min-h-screen ${mode === 'dark' ? 'bg-gray-900' : 'bg-white'} transition-colors duration-200`}>
+        {token && (
+          <>
+            <NavBar />
+            <div className="flex">
+              <SideBar />
+              <div className="flex-1 lg:ml-64 pt-16 lg:pt-20">
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/discover" element={<Discover />} />
+                    <Route path="/images" element={<Image />} />
+                    <Route path="/videos" element={<Video />} />
+                    <Route path="/tweets" element={<Tweet />} />
+                    <Route path="/websites" element={<WebSite />} />
+                    <Route path="/miscellaneous" element={<Miscellaneous />} />
+                  </Routes>
+                </BrowserRouter>
+              </div>
+            </div>
+            <PopUp />
+          </>
+        )}
+        {!token && (
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="*" element={<Navigate to="/login" />} />
+            </Routes>
+          </BrowserRouter>
+        )}
+      </div>
     </div>
   );
 }
