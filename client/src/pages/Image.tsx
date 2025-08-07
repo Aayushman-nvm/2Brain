@@ -1,45 +1,174 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-
 import Card from "../components/Card";
+import { Image as ImageIcon, Loader, AlertCircle, Camera } from "lucide-react";
 
 function Image() {
   interface ContentItem {
-  title: string,
-  link: string,
-  type: "Image" | "Video" | "Tweet" | "WebSite" | "Miscellaneous",
-  _id: string,
-  madeBy: string
-}
+    title: string;
+    link: string;
+    type: "Image" | "Video" | "Tweet" | "WebSite" | "Miscellaneous";
+    _id: string;
+    madeBy: string;
+  }
 
   const [content, setContent] = useState<ContentItem[]>([]);
-  const userId = useSelector((state: any) => state.app.user._id);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const userId = useSelector((state: any) => state.app.user?._id);
+  const mode = useSelector((state: any) => state.app.mode);
   const apiUrl = import.meta.env.VITE_SERVER_URL;
 
   async function getContent() {
+    if (!userId) {
+      setError("User not authenticated");
+      setLoading(false);
+      return;
+    }
+
     try {
+      setLoading(true);
+      setError("");
       const response = await fetch(`${apiUrl}/content?userId=${userId}`, {
         method: "GET",
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch content: ${response.statusText}`);
+      }
+
       const data = await response.json();
-      setContent(data);
+      setContent(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching content:", err);
+      setError("Failed to load images. Please try again.");
+      setContent([]);
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => {
     getContent();
-  }, []);
+  }, [userId]);
+
+  const imageContent = content.filter((item) => item.type === "Image");
+
+  const backgroundClass = mode === "dark" ? "bg-gray-900" : "bg-gray-50";
+  const textClass = mode === "dark" ? "text-white" : "text-gray-900";
+  const subTextClass = mode === "dark" ? "text-gray-400" : "text-gray-600";
+  const cardBgClass = mode === "dark" ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200";
+  const emptyStateBg = mode === "dark" ? "bg-gray-800" : "bg-gray-100";
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen ${backgroundClass} p-6`}>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center space-x-3">
+              <Loader className="animate-spin h-6 w-6 text-blue-600" />
+              <span className={subTextClass}>Loading images...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`min-h-screen ${backgroundClass} p-6`}>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className={`text-lg font-semibold ${textClass} mb-2`}>
+                Error Loading Images
+              </h3>
+              <p className={`${subTextClass} mb-4`}>{error}</p>
+              <button
+                onClick={getContent}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h2>Images</h2>
-      {content
-        .filter((item) => item.type === "Image")
-        .map((item, index) => (
-          <Card key={index} title={item.title} link={item.link} type={item.type} id={item._id} madeBy={item.madeBy}/>
-        ))}
+    <div className={`min-h-screen ${backgroundClass} p-6`}>
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="p-2 bg-green-100 rounded-lg" style={mode === "dark" ? { backgroundColor: "#064e3b" } : {}}>
+              <ImageIcon className="h-6 w-6 text-green-600" />
+            </div>
+            <h1 className={`text-2xl font-bold ${textClass}`}>
+              Images
+            </h1>
+          </div>
+          <p className={subTextClass}>
+            Your collection of saved images and visual content.
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className={`${cardBgClass} rounded-lg p-6 border mb-8`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`text-2xl font-bold ${textClass}`}>
+                {imageContent.length}
+              </div>
+              <div className={`text-sm ${subTextClass}`}>Total Images</div>
+            </div>
+            <Camera className="h-8 w-8 text-green-500" />
+          </div>
+        </div>
+
+        {/* Content */}
+        {imageContent.length === 0 ? (
+          <div className="text-center py-12">
+            <div
+              className={`w-24 h-24 mx-auto mb-6 ${emptyStateBg} rounded-full flex items-center justify-center`}
+            >
+              <ImageIcon className="h-12 w-12 text-gray-400" />
+            </div>
+            <h3 className={`text-lg font-semibold ${textClass} mb-2`}>
+              No images yet
+            </h3>
+            <p className={`${subTextClass} mb-6`}>
+              Start building your image collection by saving your first image.
+            </p>
+            <button
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent("openCreateModal"))
+              }
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 mx-auto"
+            >
+              <Camera className="h-5 w-5" />
+              <span>Add Your First Image</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {imageContent.map((item) => (
+              <Card
+                key={item._id}
+                title={item.title}
+                link={item.link}
+                type={item.type}
+                id={item._id}
+                madeBy={item.madeBy}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
