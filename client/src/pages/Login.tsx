@@ -1,11 +1,11 @@
-import { Formik } from "formik";
-import * as yup from "yup";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { setUser, setToken } from "../states/slice.js";
+import { Formik } from "formik";
+import * as yup from "yup";
+import { setUser, setToken } from "../states/slice";
+import { AlertCircle, Loader, BrainCog } from "lucide-react";
 import Register from "../components/Register";
-import { LogIn, UserPlus, MessageCircle, AlertCircle, Loader } from "lucide-react";
 
 function Login() {
   const [pageType, setPageType] = useState("login");
@@ -24,108 +24,79 @@ function Login() {
   });
 
   const registerSchema = yup.object().shape({
+    name: yup.string().min(2, "Name must be at least 2 characters").required("Name is required"),
     email: yup.string().email("Invalid email").required("Email is required"),
     password: yup.string().min(6, "Password must be at least 6 characters").required("Password is required"),
-    name: yup.string().min(2, "Name must be at least 2 characters").required("Name is required"),
   });
 
   const initialValuesLogin = { email: "", password: "" };
-  const initialValuesRegister = { email: "", password: "", name: "" };
+  const initialValuesRegister = { name: "", email: "", password: "" };
 
-  async function handleRegister(values: any, onSubmitProps: any) {
+  async function handleLogin(values: any, onSubmitProps: any) {
     setIsLoading(true);
     setError("");
-
     try {
-      const response = await fetch(`${apiUrl}/register`, {
+      const res = await fetch(`${apiUrl}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
-      console.log("API: ",apiUrl);
-      console.log("Environment: ",import.meta.env);
+      const data = await res.json();
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+      if (!res.ok) throw new Error(data.message || "Login failed");
+      if (data.user && data.token) {
+        dispatch(setUser(data.user));
+        dispatch(setToken(data.token));
+        onSubmitProps.resetForm();
+        navigate("/");
       }
-
-      onSubmitProps.resetForm();
-      setPageType("login");
-      setError("Registration successful! Please login.");
-    } catch (err: any) {
-      setError(err.message || "Registration failed. Please try again.");
+    } catch (err) {
+      setError("Login failed");
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function handleLogin(values: any, onSubmitProps: any) {
+  async function handleRegister(values: any, onSubmitProps: any) {
     setIsLoading(true);
     setError("");
-
     try {
-      const response = await fetch(`${apiUrl}/login`, {
+      const res = await fetch(`${apiUrl}/register`, {
         method: "POST",
-        headers: { "Content-type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
+      const data = await res.json();
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
-      if (data.user && data.token) {
-        dispatch(setUser(data.user));
-        dispatch(setToken(data.token));
-        onSubmitProps.resetForm();
-        navigate("/chat");
-      } else {
-        throw new Error("Invalid response from server");
-      }
-    } catch (err: any) {
-      setError(err.message || "Login failed. Please check your credentials.");
+      if (!res.ok) throw new Error(data.message || "Registration failed");
+      setPageType("login");
+      setError("Registration successful! Please login.");
+      onSubmitProps.resetForm();
+    } catch (err) {
+      setError("Registration failed");
     } finally {
       setIsLoading(false);
     }
   }
 
   async function handleFormSubmit(values: any, onSubmitProps: any) {
-    if (isLogin) {
-      await handleLogin(values, onSubmitProps);
-    } else {
-      await handleRegister(values, onSubmitProps);
-    }
+    isLogin ? await handleLogin(values, onSubmitProps) : await handleRegister(values, onSubmitProps);
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex justify-center items-center px-4">
-      <div className="bg-gray-800/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-blue-600 rounded-full">
-              <MessageCircle className="text-white" size={32} />
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 to-slate-900 flex items-center justify-center px-4">
+      <div className="bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-xl w-full max-w-md">
+        <div className="text-center mb-6">
+          <div className="mx-auto mb-4 w-fit p-3 bg-blue-600 rounded-full">
+            <BrainCog className="text-white" size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">
-            Welcome to Chat
-          </h1>
-          <div className="flex items-center justify-center space-x-2">
-            {isLogin ? <LogIn size={20} className="text-blue-400" /> : <UserPlus size={20} className="text-blue-400" />}
-            <h2 className="text-lg font-semibold text-gray-300">
-              {isLogin ? "Sign In" : "Create Account"}
-            </h2>
-          </div>
+          <h1 className="text-2xl font-bold text-white">{isLogin ? "Sign In" : "Register"}</h1>
+          <p className="text-sm text-gray-400">{isLogin ? "Enter your credentials" : "Create a new account"}</p>
         </div>
 
-        {/* Error Message */}
         {error && (
-          <div className="mb-6 p-3 bg-red-900/50 border border-red-700 rounded-lg flex items-start space-x-2">
-            <AlertCircle className="text-red-400 mt-0.5 shrink-0" size={16} />
+          <div className="mb-4 flex items-start space-x-2 bg-red-900/50 border border-red-700 rounded-lg p-3">
+            <AlertCircle className="text-red-400 mt-0.5" size={18} />
             <p className="text-red-300 text-sm">{error}</p>
           </div>
         )}
@@ -136,16 +107,20 @@ function Login() {
           validationSchema={isLogin ? loginSchema : registerSchema}
           enableReinitialize
         >
-          {({ values, errors, touched, handleBlur, handleChange, handleSubmit, resetForm, }) => (
+          {({ values, errors, touched, handleBlur, handleChange, handleSubmit, resetForm }) => (
             <form onSubmit={handleSubmit} className="space-y-5">
               {isRegister && (
-                <Register values={values} errors={errors} touched={touched} handleBlur={handleBlur} handleChange={handleChange} />
+                <Register
+                  values={values}
+                  errors={errors}
+                  touched={touched}
+                  handleBlur={handleBlur}
+                  handleChange={handleChange}
+                />
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Email Address
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
                 <input
                   placeholder="Enter your email"
                   onBlur={handleBlur}
@@ -154,17 +129,13 @@ function Login() {
                   name="email"
                   type="email"
                   disabled={isLoading}
-                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full p-3 rounded-md bg-slate-700 border border-slate-600 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                 />
-                {touched.email && errors.email && (
-                  <p className="text-red-400 text-sm mt-1">{errors.email}</p>
-                )}
+                {touched.email && errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Password
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
                 <input
                   placeholder="Enter your password"
                   onBlur={handleBlur}
@@ -173,21 +144,19 @@ function Login() {
                   name="password"
                   type="password"
                   disabled={isLoading}
-                  className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full p-3 rounded-md bg-slate-700 border border-slate-600 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                 />
-                {touched.password && errors.password && (
-                  <p className="text-red-400 text-sm mt-1">{errors.password}</p>
-                )}
+                {touched.password && errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white py-3 rounded-lg transition-colors font-semibold flex items-center justify-center space-x-2 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold flex items-center justify-center space-x-2 disabled:opacity-50"
               >
                 {isLoading ? (
                   <>
-                    <Loader className="animate-spin" size={20} />
+                    <Loader className="animate-spin" size={18} />
                     <span>{isLogin ? "Signing In..." : "Creating Account..."}</span>
                   </>
                 ) : (
@@ -204,11 +173,9 @@ function Login() {
                     setError("");
                   }}
                   disabled={isLoading}
-                  className="text-blue-400 hover:text-blue-300 text-sm underline disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="text-blue-400 hover:text-blue-300 text-sm underline disabled:opacity-50"
                 >
-                  {isLogin
-                    ? "Don't have an account? Create one"
-                    : "Already have an account? Sign in"}
+                  {isLogin ? "Don't have an account? Register" : "Already have an account? Sign In"}
                 </button>
               </div>
             </form>
