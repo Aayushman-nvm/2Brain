@@ -10,6 +10,7 @@ import {
   Trash2,
   User,
 } from "lucide-react";
+import { useEffect, useRef } from "react"
 
 interface CardProps {
   title: string;
@@ -17,6 +18,12 @@ interface CardProps {
   type: "Image" | "Video" | "Tweet" | "WebSite" | "Miscellaneous";
   id?: string;
   madeBy?: string;
+}
+
+declare global {
+  interface Window {
+    twttr?: any;
+  }
 }
 
 function Card({ title, link, type, id, madeBy }: CardProps) {
@@ -117,24 +124,59 @@ function Card({ title, link, type, id, madeBy }: CardProps) {
       }
 
       // Twitter embed
-      if (type === "Tweet" && url.hostname.includes("twitter.com")) {
+      if (type === "Tweet" && url.hostname.includes("x.com")) {
+        const tweetContainerRef = useRef<HTMLDivElement>(null);
+
+        useEffect(() => {
+          const loadTwitterScript = () => {
+            return new Promise<void>((resolve) => {
+              if (window.twttr) {
+                resolve();
+              } else {
+                const script = document.createElement("script");
+                script.src = "https://platform.twitter.com/widgets.js";
+                script.async = true;
+                script.onload = () => resolve();
+                document.body.appendChild(script);
+              }
+            });
+          };
+
+          const createTweetEmbed = async () => {
+            await loadTwitterScript();
+
+            if (window.twttr && window.twttr.widgets && tweetContainerRef.current) {
+              tweetContainerRef.current.innerHTML = ""; // Clear previous
+              window.twttr.widgets.createTweet(
+                getTweetId(url.href),
+                tweetContainerRef.current,
+                {
+                  theme: mode === "dark" ? "dark" : "light",
+                }
+              );
+            }
+          };
+
+          const getTweetId = (url: string): string => {
+            const parts = url.split("/");
+            return parts[parts.length - 1].split("?")[0]; // Extracts the Tweet ID
+          };
+
+          createTweetEmbed();
+        }, [url.href, mode]);
+
         return (
           <div
             className={`rounded-lg p-4 border ${mode === "dark"
-                ? "border-gray-600 bg-gray-800"
-                : "border-gray-300 bg-gray-50"
+              ? "border-gray-600 bg-gray-800"
+              : "border-gray-300 bg-gray-50"
               }`}
           >
             <div className={`text-sm mb-2 ${mode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
               Twitter Post
             </div>
-            <button
-              onClick={handleLinkClick}
-              className={`text-sm hover:text-blue-700 flex items-center ${mode === "dark" ? "text-blue-400 hover:text-blue-300" : "text-blue-600"
-                }`}
-            >
-              View on Twitter →
-            </button>
+
+            <div ref={tweetContainerRef} />
           </div>
         );
       }
@@ -160,8 +202,8 @@ function Card({ title, link, type, id, madeBy }: CardProps) {
         return (
           <div
             className={`rounded-lg p-4 border ${mode === "dark"
-                ? "border-gray-600 bg-gray-800"
-                : "border-gray-300 bg-gray-50"
+              ? "border-gray-600 bg-gray-800"
+              : "border-gray-300 bg-gray-50"
               }`}
           >
             <div className={`text-sm mb-2 ${mode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
@@ -181,8 +223,8 @@ function Card({ title, link, type, id, madeBy }: CardProps) {
       return (
         <div
           className={`rounded-lg p-4 border ${mode === "dark"
-              ? "border-gray-600 bg-gray-800"
-              : "border-gray-300 bg-gray-50"
+            ? "border-gray-600 bg-gray-800"
+            : "border-gray-300 bg-gray-50"
             }`}
         >
           <button
@@ -202,8 +244,8 @@ function Card({ title, link, type, id, madeBy }: CardProps) {
   return (
     <div
       className={`rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200 border ${mode === "dark"
-          ? "bg-gray-800 border-gray-700"
-          : "bg-white border-gray-200"
+        ? "bg-gray-800 border-gray-700"
+        : "bg-white border-gray-200"
         }`}
     >
       {/* Header */}
